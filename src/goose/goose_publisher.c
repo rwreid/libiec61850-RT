@@ -61,6 +61,15 @@ struct sGoosePublisher {
     bool simulation;
 
     MmsValue* timestamp; /* time when stNum is increased */
+	
+	uint32_t minTime;
+	uint32_t maxTime;
+	bool	dataChange;
+	
+	int publishInterval;
+	
+	Thread thread;
+	
 };
 
 GoosePublisher
@@ -72,8 +81,11 @@ GoosePublisher_createEx(CommParameters* parameters, const char* interfaceID, boo
 
         if (prepareGooseBuffer(self, parameters, interfaceID, useVlanTag)) {
             self->timestamp = MmsValue_newUtcTimeByMsTime(Hal_getTimeInMs());
-
+			self->thread = NULL;
+			self->minTime = 1;
+			self->maxTime = 1000;
             GoosePublisher_reset(self);
+			self->dataChange = false;
         }
         else {
             GoosePublisher_destroy(self);
@@ -140,6 +152,18 @@ GoosePublisher_setConfRev(GoosePublisher self, uint32_t confRev)
 }
 
 void
+GoosePublisher_setMinTime(GoosePublisher self, uint32_t minTime)
+{
+    self->minTime = minTime;
+}
+
+void
+GoosePublisher_setMaxTime(GoosePublisher self, uint32_t maxTime)
+{
+    self->maxTime = maxTime;
+}
+
+void
 GoosePublisher_setSimulation(GoosePublisher self, bool simulation)
 {
     self->simulation = simulation;
@@ -165,6 +189,7 @@ GoosePublisher_increaseStNum(GoosePublisher self)
         self->stNum = 1;
 
     self->sqNum = 0;
+	self->publishInterval = self->minTime;
 
     return currentTime;
 }
@@ -180,6 +205,17 @@ GoosePublisher_setTimeAllowedToLive(GoosePublisher self, uint32_t timeAllowedToL
 {
     self->timeAllowedToLive = timeAllowedToLive;
 }
+
+void
+GoosePublisher_setDataChange(GoosePublisher self)
+{
+    self->dataChange = True;
+	self->sqNum = 0;
+    self->stNum++;
+	
+}
+
+
 
 static bool
 prepareGooseBuffer(GoosePublisher self, CommParameters* parameters, const char* interfaceID, bool useVlanTags)
@@ -414,3 +450,109 @@ GoosePublisher_publish(GoosePublisher self, LinkedList dataSet)
 
     return 0;
 }
+
+void
+GoosePubisher_stop(GooseReceiver self)
+{
+#if (CONFIG_MMS_THREADLESS_STACK == 0)
+    self->stop = true;
+    self->running = false;
+
+    if (self->thread)
+        Thread_destroy(self->thread);
+
+    self->stop = false;
+#endif
+}
+
+
+static void
+goosePubilsherLoop_RT(void* threadParameter)
+{
+    GoosePublisher self = (GoosePublisher) threadParameter;
+
+    if (self->running) {
+
+        while (self->running) {
+
+			//check if updated
+			
+			//publish
+			if (GoosePublisher_publish(publisher, dataSetValues) == -1) {
+	            printf("Error sending message!\n");
+	        }
+			
+			Thread_sleep_RT(1+(2^self->sqNum));
+
+            if (self->stop)
+                break;
+        }
+
+        GoosePublisher_stopThreadless(self);
+    }
+}
+
+/* start GOOSE receiver in a separate thread */
+void
+GooseReceiver_start_RT(GooseReceiver self)
+{
+#if (CONFIG_MMS_THREADLESS_STACK == 0)
+    if (GooseReceiver_startThreadless(self)) {
+		
+
+        self->thread = Thread_create_RT((ThreadExecutionFunction) gooseReceiverLoopRT, (void*) self, false);
+
+        if (self->thread != NULL) {
+            if (DEBUG_GOOSE_SUBSCRIBER)
+                printf("GOOSE_SUBSCRIBER: GOOSE receiver started for interface %s\n", self->interfaceId);
+
+            Thread_start_RT(self->thread);
+        }
+        else {
+            if (DEBUG_GOOSE_SUBSCRIBER)
+                printf("GOOSE_SUBSCRIBER: Starting GOOSE receiver failed for interface %s\n", self->interfaceId);
+        }
+    }
+#endif
+}
+EthernetSocket
+GooseReceiver_startThreadless(GooseReceiver self)
+{
+    if (self->interfaceId == NULL)
+        self->ethSocket = Ethernet_createSocket(CONFIG_ETHERNET_INTERFACE_ID, NULL);
+    else
+        self->ethSocket = Ethernet_createSocket(self->interfaceId, NULL);
+
+    if (self->ethSocket != NULL) {
+        Ethernet_setProtocolFilter(self->ethSocket, ETH_P_GOOSE);
+        self->running = true;
+    }
+    else
+        self->running = false;
+
+    return self->ethSocket;
+}
+
+void
+GoosePublisher_stopThreadless(GooseReceiver self)
+{
+    if (self->ethSocket)
+        Ethernet_destroySocket(self->ethSocket);
+
+    self->running = false;
+}
+
+/* call after reception of ethernet frame */
+bool
+GoosePublisher_tick(GooseReceiver self)
+{
+    
+}
+
+void
+GooseReceiver_handleMessage(GooseReceiver self, uint8_t* buffer, int size)
+{
+    parseGooseMessage(self, buffer, size);
+}
+
+

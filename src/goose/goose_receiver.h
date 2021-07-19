@@ -116,6 +116,14 @@ LIB61850_API void
 GooseReceiver_start(GooseReceiver self);
 
 /**
+ * \brief start the GOOSE receiver in a separate thread with realtime priority
+ *
+ * \param self the GooseReceiver instance
+ */
+LIB61850_API void
+GooseReceiver_start_RT(GooseReceiver self);
+
+/**
  * \brief stop the GOOSE receiver running in a separate thread
  *
  * This function is used to stop the receiver thread started with GooseReceiver_start

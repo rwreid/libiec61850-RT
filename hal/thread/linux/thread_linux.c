@@ -23,6 +23,9 @@
 
 
 #include <pthread.h>
+#include <sys/types.h>
+#include <sched.h>
+
 #include <semaphore.h>
 #include <unistd.h>
 #include "hal_thread.h"
@@ -35,6 +38,10 @@ struct sThread {
 	pthread_t pthread;
 	int state;
 	bool autodestroy;
+	
+	//Extended for RT compaability
+	struct sched_param param;
+    pthread_attr_t attr;
 };
 
 Semaphore
@@ -77,10 +84,42 @@ Thread_create(ThreadExecutionFunction function, void* parameter, bool autodestro
         thread->function = function;
         thread->state = 0;
         thread->autodestroy = autodestroy;
+		
+		pthread_attr_init(&thread->attr);
+		pthread_attr_setstacksize(&thread->attr, PTHREAD_STACK_MIN);
+		pthread_attr_setschedpolicy(&thread->attr, SCHED_FIFO);
+		
+		thread->param.sched_priority = sched_get_priority_min(SCHED_FIFO) + 1  ;  //default prority to set 1 above background linux.
+        pthread_attr_setschedparam(&thread->attr, &thread->param);
+		pthread_attr_setinheritsched(&thread->attr, PTHREAD_EXPLICIT_SCHED);
 	}
 
 	return thread;
 }
+
+Thread
+Thread_create_RT(ThreadExecutionFunction function, void* parameter, bool autodestroy, int prio)
+{
+	Thread thread = (Thread) GLOBAL_MALLOC(sizeof(struct sThread_RT));
+
+	if (thread != NULL) {
+        thread->parameter = parameter;
+        thread->function = function;
+        thread->state = 0;
+        thread->autodestroy = autodestroy;
+
+		pthread_attr_init(&thread->attr);
+		pthread_attr_setstacksize(&thread->attr, PTHREAD_STACK_MIN);
+		pthread_attr_setschedpolicy(&thread->attr, SCHED_FIFO);
+		thread->param.sched_priority = prio;
+        pthread_attr_setschedparam(&thread->attr, &thread->param);
+		pthread_attr_setinheritsched(&thread->attr, PTHREAD_EXPLICIT_SCHED);
+
+	}
+
+	return thread;
+}
+
 
 static void*
 destroyAutomaticThread(void* parameter)
@@ -98,14 +137,17 @@ void
 Thread_start(Thread thread)
 {
 	if (thread->autodestroy == true) {
-		pthread_create(&thread->pthread, NULL, destroyAutomaticThread, thread);
+		//pthread_create(&thread->pthread, NULL, thread->function, thread->parameter);
+		pthread_create(&thread->pthread, &thread->attr, destroyAutomaticThread, thread);
 		pthread_detach(thread->pthread);
 	}
 	else
-		pthread_create(&thread->pthread, NULL, thread->function, thread->parameter);
-
+		//pthread_create(&thread->pthread, NULL, thread->function, thread->parameter);
+		//make all process threads realtime, with default priority
+		pthread_create(&thread->pthread, &thread->attr, thread->function, thread->parameter);
 	thread->state = 1;
 }
+
 
 void
 Thread_destroy(Thread thread)
@@ -123,3 +165,15 @@ Thread_sleep(int millies)
 	usleep(millies * 1000);
 }
 
+void
+Thread_sleep_us(int usecs)
+{
+	usleep(usecs);
+}
+
+void
+Thread_sleep_deadline(struct timespec *req, struct timespec *ret)
+{
+	clock_nanosleep( CLOCK_MONOTONIC, TIMER_ABSTIME , req , ret );
+	
+}

@@ -39,6 +39,7 @@ Hal_getTimeInMs()
 
 #include <sys/time.h>
 
+/*
 uint64_t
 Hal_getTimeInMs()
 {
@@ -48,6 +49,21 @@ Hal_getTimeInMs()
 
     return ((uint64_t) now.tv_sec * 1000LL) + (now.tv_usec / 1000);
 }
-
+*/
 #endif
 
+void tsNormRT(struct timespec *ts)
+{
+   while (ts->tv_nsec >= NSEC_PER_SEC) {
+      ts->tv_nsec -= NSEC_PER_SEC;
+      ts->tv_sec++;
+   }
+}
+
+static long 
+tsCalcTimeDiff(struct timespec const* t1, struct timespec const* t2)
+{
+  long diff = t1->tv_nsec - t2->tv_nsec;
+  diff += 1000000000 * (t1->tv_sec - t2->tv_sec);
+  return diff;
+}
