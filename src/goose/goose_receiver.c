@@ -985,6 +985,31 @@ GooseReceiver_start(GooseReceiver self)
 #endif
 }
 
+/* start GOOSE receiver in a separate thread */
+void
+GooseReceiver_start_RT(GooseReceiver self)
+{
+#if (CONFIG_MMS_THREADLESS_STACK == 0)
+    if (GooseReceiver_startThreadless(self)) {
+		
+
+        self->thread = Thread_create_RT((ThreadExecutionFunction) gooseReceiverLoop, (void*) self, false, PRIORIRTY_GOOSE_REC);
+
+        if (self->thread != NULL) {
+            if (DEBUG_GOOSE_SUBSCRIBER)
+                printf("GOOSE_SUBSCRIBER: GOOSE receiver started for interface %s\n", self->interfaceId);
+
+            Thread_start(self->thread);
+        }
+        else {
+            if (DEBUG_GOOSE_SUBSCRIBER)
+                printf("GOOSE_SUBSCRIBER: Starting GOOSE receiver failed for interface %s\n", self->interfaceId);
+        }
+    }
+#endif
+}
+
+
 bool
 GooseReceiver_isRunning(GooseReceiver self)
 {

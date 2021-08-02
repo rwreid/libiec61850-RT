@@ -33,6 +33,7 @@ extern "C" {
 #include "hal_ethernet.h"
 #include "goose_subscriber.h"
 
+#define PRIORIRTY_GOOSE_REC  80   // BPH allow global tuning of priorities
 /**
  * \addtogroup goose_api_group
  */
@@ -114,6 +115,14 @@ GooseReceiver_removeSubscriber(GooseReceiver self, GooseSubscriber subscriber);
  */
 LIB61850_API void
 GooseReceiver_start(GooseReceiver self);
+
+/**
+ * \brief start the GOOSE receiver in a separate thread with realtime priority
+ *
+ * \param self the GooseReceiver instance
+ */
+LIB61850_API void
+GooseReceiver_start_RT(GooseReceiver self);
 
 /**
  * \brief stop the GOOSE receiver running in a separate thread
