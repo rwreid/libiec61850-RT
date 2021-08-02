@@ -5,22 +5,22 @@
  *
  *  Copyright 2013-2018 Michael Zillgith
  *
- *	This file is part of libIEC61850.
+ *  This file is part of libIEC61850.
  *
- *	libIEC61850 is free software: you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation, either version 3 of the License, or
- *	(at your option) any later version.
+ *  libIEC61850 is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
  *
- *	libIEC61850 is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
+ *  libIEC61850 is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- *	You should have received a copy of the GNU General Public License
- *	along with libIEC61850.  If not, see <http://www.gnu.org/licenses/>.
+ *  You should have received a copy of the GNU General Public License
+ *  along with libIEC61850.  If not, see <http://www.gnu.org/licenses/>.
  *
- *	See COPYING file for the complete license text.
+ *  See COPYING file for the complete license text.
  */
 
 #ifndef THREAD_HAL_H_
@@ -80,7 +80,7 @@ Thread_create(ThreadExecutionFunction function, void* parameter, bool autodestro
  * \return the newly created Thread instance
  */
 PAL_API Thread
-Thread_create_RT(ThreadExecutionFunction function, void* parameter, bool autodestroy, int prio));
+Thread_create_RT(ThreadExecutionFunction function, void* parameter, bool autodestroy, int prio);
 
 /**
  * \brief Start a Thread.
@@ -120,7 +120,7 @@ Thread_sleep_us(int usec);
  * \param If the call is interrupted it writes the remaining time into the structure pointed to by rem unless rem is NULL.
  */
 PAL_API void
-Thread_sleep_deadline(struct timespec *req, struct timespec *rem)
+Thread_sleep_deadline(struct timespec *req, struct timespec *rem);
 
 PAL_API Semaphore
 Semaphore_create(int initialValue);
