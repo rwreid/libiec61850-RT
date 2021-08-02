@@ -70,6 +70,19 @@ PAL_API Thread
 Thread_create(ThreadExecutionFunction function, void* parameter, bool autodestroy);
 
 /**
+ * \brief Create a new Thread with RealTime priority
+ *
+ * \param function the entry point of the thread
+ * \param parameter a parameter that is passed to the threads start function
+ * \param autodestroy the thread is automatically destroyed if the ThreadExecutionFunction has finished.
+ * \param prioriy of thread to be assigned.
+ *
+ * \return the newly created Thread instance
+ */
+PAL_API Thread
+Thread_create_RT(ThreadExecutionFunction function, void* parameter, bool autodestroy, int prio));
+
+/**
  * \brief Start a Thread.
  *
  * This function invokes the start function of the thread. The thread terminates when
@@ -93,6 +106,21 @@ Thread_destroy(Thread thread);
  */
 PAL_API void
 Thread_sleep(int millies);
+
+/**
+ * \brief Suspend execution of the Thread for the specified number of microseconds
+ */
+PAL_API void
+Thread_sleep_us(int usec);
+
+/**
+ * \brief Suspend execution of the Thread for the specified time in struct with nano second 
+ * 
+ * \param Suspends the execution of the calling thread until either at least the time specified in *req has elapsed
+ * \param If the call is interrupted it writes the remaining time into the structure pointed to by rem unless rem is NULL.
+ */
+PAL_API void
+Thread_sleep_deadline(struct timespec *req, struct timespec *rem)
 
 PAL_API Semaphore
 Semaphore_create(int initialValue);

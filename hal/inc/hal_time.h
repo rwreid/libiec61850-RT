@@ -21,6 +21,9 @@
  *  See COPYING file for the complete license text.
  */
 
+#include <time.h>
+
+#define NSEC_PER_SEC    1000000000
 #ifndef HAL_C_
 #define HAL_C_
 
@@ -92,3 +95,14 @@ Hal_setTimeInNs(nsSinceEpoch nsTime);
 
 
 #endif /* HAL_C_ */
+
+/* the struct timespec consists of nanoseconds
+ * and seconds. if the nanoseconds are getting
+ * bigger than 1000000000 (= 1 second) the
+ * variable containing seconds has to be
+ * incremented and the nanoseconds decremented
+ * by 1000000000.
+ */
+ 
+
+static long tsCalcTimeDiff(struct timespec const* t1, struct timespec const* t2);
