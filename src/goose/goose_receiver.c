@@ -43,6 +43,8 @@
 
 #define ETH_BUFFER_LENGTH 1518
 
+#define PRIORIRTY_GOOSE_REC 95  // BTH Thinking we globally define some prioritys for particular applications that allows us to tune it in future
+
 #define ETH_P_GOOSE 0x88b8
 
 struct sGooseReceiver
@@ -939,7 +941,7 @@ gooseReceiverLoop(void *threadParameter)
     if (self->running) {
 
         while (self->running) {
-            switch (EthernetHandleSet_waitReady(handleSet, 100))
+            switch (EthernetHandleSet_waitReady(handleSet, 100))  // BPH I think this will block for 100ms? not sure
             {
             case -1:
                 if (DEBUG_GOOSE_SUBSCRIBER)
@@ -985,7 +987,7 @@ GooseReceiver_start(GooseReceiver self)
 #endif
 }
 
-/* start GOOSE receiver in a separate thread */
+/* start GOOSE receiver in a separate thread with real time priority */
 void
 GooseReceiver_start_RT(GooseReceiver self)
 {
